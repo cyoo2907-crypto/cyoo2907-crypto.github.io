@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Company Portal</title>
+    <style>
+        :root { --bg: #121212; --card: #1e1e1e; --primary: #3d5afe; --accent: #ff1744; --green: #00e676; --text: #ffffff; }
+        body { font-family: 'Malgun Gothic', sans-serif; background: var(--bg); color: var(--text); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: var(--card); padding: 35px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); width: 500px; text-align: center; }
+        .hidden { display: none !important; }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; background: #2c2c2c; color: white; outline: none; }
+        button { width: 100%; padding: 13px; margin-top: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
+        
+        .btn-blue { background: var(--primary); }
+        .btn-red { background: var(--accent); }
+        .btn-green { background: var(--green); color: #000; }
+        .btn-gray { background: #444; }
+
+        .pw-group { position: relative; }
+        .btn-toggle { position: absolute; right: 10px; top: 18px; width: 50px; padding: 5px; font-size: 11px; background: #444; border-radius: 4px; }
+        
+        #hacking-log { background: #000; color: #0f0; text-align: left; padding: 15px; border-radius: 8px; font-family: monospace; height: 160px; overflow-y: auto; border: 1px solid #0f0; margin-top: 15px; }
+        .status-box { background: #2c2c2c; padding: 15px; border-radius: 10px; margin: 15px 0; text-align: left; border-left: 5px solid var(--primary); }
+        .rank-tag { color: #f1c40f; font-weight: bold; }
+        
+        .admin-notif { background: #fff3cd; color: #856404; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-weight: bold; border-left: 5px solid #f1c40f; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div id="view-main">
+            <h1>🏢 COMPANY PORTAL</h1>
+            <p>환영합니다. 로그인을 진행해 주세요.</p>
+            <button class="btn-blue" onclick="show('view-staff-login')">직원 로그인</button>
+            <button id="admin-btn" class="hidden btn-red" onclick="show('view-admin-login')">관리자 권한 로그인</button>
+        </div>
+
+        <div id="view-staff-login" class="hidden">
+            <h2>직원 로그인</h2>
+            <input type="email" id="s-email" placeholder="이메일 (syoo2907@gmail.com)" value="syoo2907@gmail.com">
+            <div class="pw-group">
+                <input type="password" id="s-pw" placeholder="비밀번호 (1234)">
+                <button class="btn-toggle" onclick="togglePw('s-pw')">보기</button>
+            </div>
+            <button class="btn-blue" onclick="doStaffLogin()">로그인</button>
+            <button class="btn-gray" onclick="show('view-main')">취소</button>
+        </div>
+
+        <div id="view-hacking" class="hidden">
+            <h2 style="color:#0f0;">ACCESSING SERVER...</h2>
+            <div id="hacking-log"></div>
+        </div>
+
+        <div id="view-staff-home" class="hidden">
+            <h2>직원 워크스테이션</h2>
+            <div class="status-box">
+                <p>👤 계정: syoo2907</p>
+                <p>🎖️ 등급: <span id="user-rank" class="rank-tag">-</span></p>
+                <p>📊 성과: <span id="work-count">0</span>건 완료</p>
+            </div>
+            
+            <div id="work-section">
+                <p id="work-msg">업무가 대기 중입니다.</p>
+                <button id="btn-start" class="btn-green" onclick="startWork()">💼 업무 시작</button>
+                <button id="btn-end" class="btn-red hidden" onclick="endWork()">📥 업무 종료 (보고서 제출)</button>
+            </div>
+
+            <button class="btn-blue" onclick="show('view-main')" style="margin-top:20px;">메인으로 이동</button>
+            <button class="btn-gray" onclick="logout()">로그아웃</button>
+        </div>
+
+        <div id="view-admin-login" class="hidden">
+            <h2>관리자 인증</h2>
+            <div class="pw-group">
+                <input type="password" id="a-pw" placeholder="관리자 비밀번호 (4321)">
+                <button class="btn-toggle" onclick="togglePw('a-pw')">보기</button>
+            </div>
+            <button class="btn-red" onclick="doAdminLogin()">관리자 로그인</button>
+            <button class="btn-gray" onclick="show('view-main')">뒤로</button>
+        </div>
+
+        <div id="view-admin-panel" class="hidden">
+            <h3>🛠️ 통합 관리 시스템</h3>
+            
+            <div id="admin-notif" class="admin-notif hidden">
+                🔔 알림: 새로운 직원이 시스템에 접속했습니다!
+            </div>
+
+            <label>등급 조정 (전체 리스트)</label>
+            <select id="rank-list"></select>
+            <button class="btn-blue" onclick="changeRank()">등급 즉시 변경</button>
+
+            <div style="margin-top:20px; border-top:1px solid #333; padding-top:15px; text-align: left;">
+                <input type="text" id="upd-in" placeholder="업데이트 내용 직접 작성">
+                <button class="btn-blue" onclick="alert('업데이트 완료')">업데이트</button>
+                
+                <input type="text" id="mem-in" placeholder="멤버십 이름 직접 작성">
+                <button class="btn-blue" onclick="alert('멤버십 생성됨')">멤버십 버튼</button>
+                
+                <input type="text" id="prj-in" placeholder="프로젝트 이름 직접 작성">
+                <button class="btn-blue" onclick="alert('프로젝트 생성됨')">프로젝트 생성</button>
+
+                <p style="margin-bottom:5px; font-weight:bold;">그 외 등등 설정</p>
+                <textarea id="etc-in" placeholder="명령어를 직접 입력하세요..."></textarea>
+                <button class="btn-green" onclick="alert('반영되었습니다.')">기타 설정 적용</button>
+                <button class="btn-red" onclick="alert('시스템이 초기화되었습니다.')">전체 리셋</button>
+                <button class="btn-gray" onclick="alert('로그가 저장되었습니다.')">로그 다운로드</button>
+            </div>
+
+            <button class="btn-gray" onclick="logout()" style="margin-top:20px;">관리자 로그아웃</button>
+        </div>
+    </div>
+
+    <script>
+        const ranks = ["창립자", "오너", "회장", "부회장", "총괄대표", "CEO", "사장", "부사장", "이사", "상무", "전무", "본부장", "센터장", "실장", "총괄매니저", "디렉터", "팀장", "파트장", "리더", "매니저", "부매니저", "슈퍼바이저", "코디네이터", "캡틴", "시니어 스태프", "스태프", "주니어 스태프", "어시스턴트", "헬퍼", "서포터", "크루", "운영요원", "인턴", "연수생", "트레이니", "견습생", "수습직원", "교육생", "뉴비", "루키", "VIP 매니저", "수석 매니저", "마스터 스태프", "엘리트 스태프", "레전드 매니저", "명예 관리자", "특별 운영진", "브론즈 스태프", "실버 스태프", "골드 매니저", "플래티넘 리더", "다이아 디렉터", "마스터 운영진", "그랜드마스터 총괄", "레전드 관리자", "섀도우 매니저", "팬텀 스태프", "오버로드 디렉터", "넥서스 관리자", "아크 리더", "제로급 운영관", "인피니티 총괄", "크림슨 캡틴"];
+
+        // 초기 설정
+        if(!localStorage.getItem('rank')) localStorage.setItem('rank', '인턴');
+        if(!localStorage.getItem('works')) localStorage.setItem('works', '0');
+
+        const rSelect = document.getElementById('rank-list');
+        ranks.forEach(r => {
+            let o = document.createElement('option');
+            o.value = r; o.innerText = r;
+            rSelect.appendChild(o);
+        });
+
+        function show(id) {
+            ['view-main', 'view-staff-login', 'view-hacking', 'view-staff-home', 'view-admin-login', 'view-admin-panel'].forEach(v => document.getElementById(v).classList.add('hidden'));
+            document.getElementById(id).classList.remove('hidden');
+            
+            if(id === 'view-staff-home') {
+                document.getElementById('user-rank').innerText = localStorage.getItem('rank');
+                document.getElementById('work-count').innerText = localStorage.getItem('works');
+            }
+            if(id === 'view-admin-panel' && localStorage.getItem('notif') === 'true') {
+                document.getElementById('admin-notif').classList.remove('hidden');
+                localStorage.setItem('notif', 'false');
+            }
+        }
+
+        function togglePw(id) {
+            const x = document.getElementById(id);
+            x.type = x.type === "password" ? "text" : "password";
+        }
+
+        // 직원 로그인 (거부 메시지 없이 바로 통과)
+        function doStaffLogin() {
+            const email = document.getElementById('s-email').value;
+            const pw = document.getElementById('s-pw').value;
+            if(email === "syoo2907@gmail.com" && pw === "1234") {
+                localStorage.setItem('notif', 'true');
+                runHacking();
+            }
+        }
+
+        function runHacking() {
+            show('view-hacking');
+            const log = document.getElementById('hacking-log');
+            log.innerHTML = "";
+            const msgs = ["> Connecting...", "> Bypassing firewall...", "> Authorizing syoo2907...", "> Complete."];
+            let i = 0;
+            const t = setInterval(() => {
+                if(i < msgs.length) { log.innerHTML += msgs[i++] + "<br>"; }
+                else { 
+                    clearInterval(t); 
+                    document.getElementById('admin-btn').classList.remove('hidden');
+                    show('view-staff-home'); 
+                }
+            }, 400);
+        }
+
+        // 업무 시스템 (수동)
+        function startWork() {
+            document.getElementById('btn-start').classList.add('hidden');
+            document.getElementById('btn-end').classList.remove('hidden');
+            document.getElementById('work-msg').innerText = "🔨 현재 업무가 진행 중입니다...";
+        }
+
+        function endWork() {
+            let count = parseInt(localStorage.getItem('works')) + 1;
+            localStorage.setItem('works', count);
+            document.getElementById('work-count').innerText = count;
+            document.getElementById('btn-end').classList.add('hidden');
+            document.getElementById('btn-start').classList.remove('hidden');
+            document.getElementById('work-msg').innerText = "✅ 업무가 완료되었습니다!";
+            alert("업무 보고가 전송되었습니다.");
+        }
+
+        function doAdminLogin() {
+            if(document.getElementById('a-pw').value === "4321") show('view-admin-panel');
+        }
+
+        function changeRank() {
+            const newRank = document.getElementById('rank-list').value;
+            localStorage.setItem('rank', newRank);
+            alert("등급이 변경되었습니다.");
+        }
+
+        function logout() { location.reload(); }
+    </script>
+</body>
+</html>
